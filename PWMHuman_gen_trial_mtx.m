@@ -9,6 +9,10 @@ data_dir = '/home/vizhe/Documents/Auditory_PWM_human/'; %ALL EXPERIMENTS subject
 expNum_folderName = name; %the subfolder you wish to create! All the subject folders and trial paramter files will be stored in this folder. 
 subjects = 1;
 
+% distr_type = 'uniform'
+distr_type = 'bimodal'
+% distr_type = 'neg_skewed'
+% distr_type = 'pos_skewed'
 sdi = .15;  % the formula for sdi =(sd1 - sd2)/(sd1 + sd2)
 ratio = (1+sdi)/(1-sdi);
 ratio1 =2.5;
@@ -16,7 +20,7 @@ alfa = (ratio1-1)/(1+ratio1);
 R = 10*log10(ratio);
 R1 = 10*log10(ratio1);
 sd1 = 1; %define the highest value stimulus in the stimulus set
-stim_levels = 5; % %the number of base&comparison stimuli levels; if diamond=0, comparison stimuli levels will be base_stim_count+2;
+stim_levels = 6; % %the number of base&comparison stimuli levels; if diamond=0, comparison stimuli levels will be base_stim_count+2;
 %Number of points in SGM = stim_levels*2 - 2;
 
 diamond = 1; %1=yes, 0=no: specify if you want a diamond shaped SGM or 'vertical-lines' SGM
@@ -24,7 +28,8 @@ diamond = 1; %1=yes, 0=no: specify if you want a diamond shaped SGM or 'vertical
 %Number of trials: 
 %Trials per session = (stim_levs*2)-2 X repsPerSes;
 %Sessions in experiment = modality count X session count;
-repsPerSes = 2; %in every session each SGM data point(stim pair) is presented this many times
+num_tials = 400;
+repsPerSes = num_tials / (stim_levels - 1) / 2; %in every session each SGM data point(stim pair) is presented this many times
 modalities = 1; %the modalities vector; 1:A-A; 2:T-T; 3:TA-TA; 4:A-T; 5:T-A;
 session_count = 5; %sessions per modality; session modality picked randomly from modalities vector without replacement; when all chosen, restart with a full set;
 
@@ -36,9 +41,9 @@ pre_delay = 250; %ms, FIXED VALUE; to make it variable, implement the code as us
 inter_delay = [500,200,100]; % [2000 4000 6000]; %ms, FIXED VALUE;
 post_delay = [200 300]; %ms, the length of this vector must divide number of points in SGM * repsPerSes
 %% Consistency check:
-balanced_delay = (stim_levels*2 - 2)*repsPerSes/length(post_delay);
+balanced_delay = num_tials/length(post_delay);
 if mod(balanced_delay,1) 
-   disp('Nothing was generated! Element count in "post delay" must divide (stim_levels*2-2)*repsPerSes without remainder. Add/remove values from "post_delay"!')
+   disp('Nothing was generated! Element count in "post delay" must divide "num_tials" without remainder. Add/remove values from "post_delay"!')
 return
 end
 %% Generate stimuli values, show a plot of the SGM
@@ -71,10 +76,47 @@ end
 %loglog(stim_levs(:,1),stim_levs(:,2),'o')
 %grid on
 
-%% Replicate stimulus values to fill the matrix pseudorandomly
-replic_stims = repmat(stim_levs,repsPerSes,1);
+% number of pairs of stimuli
+num_stim_pairs = size(stim_levs,1);
+num_pair_pairs = num_stim_pairs/2;
+
+switch distr_type
+case 'uniform'
+    %% Replicate stimulus values to fill the matrix pseudorandomly
+    reweight = ones(num_pair_pairs);
+case 'neg_skewed'
+    p_ratio = 5.;
+    lambda = log(p_ratio)/(num_pair_pairs - 1);
+    reweight = exp(-lambda*[1:num_pair_pairs]);
+    reweight = flip(reweight);
+case 'pos_skewed'
+    p_ratio = 5.;
+    lambda = log(p_ratio)/(num_pair_pairs - 1);
+    reweight = exp(-lambda*[1:num_pair_pairs]);
+case 'bimodal'
+    lambda = 1;
+    reweight = exp(-lambda*[1:num_pair_pairs]);
+    reweight = reweight + flip(reweight);
+otherwise
+    message = sprintf('Invalid dist_type = %s: switching to uniform', distr_type);
+    disp(message);
+    reweight = ones(num_pair_pairs);
+end
+
+% generate data with weights from chosen distribution
+counts_pair_pairs = round( reweight/sum(reweight) * repsPerSes * num_pair_pairs);
+replic_stims = [];
+for pp = 1:num_pair_pairs
+    replic_stims = [replic_stims; repmat(stim_levs(pp*2-1,:), counts_pair_pairs(pp), 1)];
+    replic_stims = [replic_stims; repmat(stim_levs(pp*2,:), counts_pair_pairs(pp), 1)];
+end
+    
 stim1_col = replic_stims(:,1);
 stim2_col = replic_stims(:,2);
+
+save('data.mat')
+
+% return
 
 rep_count = size(replic_stims,1)/size(post_delay, 2);
 replic_post_delay = repmat(post_delay',rep_count,1);
@@ -150,5 +192,7 @@ else
 %     return
 end
 save([folderPath,'trl_mtx.mat'],'trl_mtx');
+
+save('data.mat')
 
 disp('Done building session matrices!')
