@@ -9,13 +9,7 @@
 % check out Default_startup.m for a list of expected settings
 
 %% parameters of task
-
-% general parameters : ASK ATHENA FOR EXACT VALUES
-fcut=110;
-lfreq=500; %3000
-hfreq=10000; %4000
-filter_type='GAUS';
-
+% general parameters
 % auditory stimulus presentation
 a_bg_pre_post = [0 0];  % duration in sec of pre and post background white noise 
 a_balance = 0;
@@ -64,7 +58,7 @@ buzz = repmat(0.5*buzz',2,1)*a_volume;
 
 timeouttone = randn(size(readytone))*0.1*a_volume;
 
-%% setup preliminaries
+% setup preliminaries
 
 % Store the original code in a string, so we can reproduce it fully.
 fp = fopen([mfilename '.m'], 'r');
@@ -74,7 +68,7 @@ try
     fp = fopen('make_pwm.m', 'r');
     source_code.make_pwm = fscanf(fp, '%c');
     fclose(fp);
-    fp = fopen([name filesep name '_startup.m'], 'r');
+    fp = fopen([data_dir name '_startup.m'], 'r');
     source_code.startup = fscanf(fp, '%c');
     fclose(fp);
     fp = fopen('Default_startup_pwm.m', 'r');
@@ -88,15 +82,15 @@ catch
     fprintf(2, 'PWMHuman.m: could not save source code for make_pwm.m and the startup file\n\n');
 end
 
-
 % Make sure the directory exists
-if ~exist(name, ...
-        'dir')
-   mkdir(name);
+if ~exist([distr_type '/' name], 'dir')
+   mkdir([distr_type '/' name]);
 end
 
 % --- find a session filename in the format name_fname_string_ddd where ddd is a session number
-u = dir([name filesep name '_' fname_string '*.mat']);
+data_dir = ['/home/vizhe/Documents/Auditory_PWM_human/' distr_type '/' name '/'];
+
+u = dir([data_dir name '_' fname_string '*.mat']);
 session_number = numel(u)+1;
 
 session_string = num2str(session_number);
@@ -105,7 +99,7 @@ session_fname  = [name '_' fname_string '_' session_string];
 
 
 %% this needs to be resolved.
-Screen('Preference', 'SkipSyncTests', 0)
+Screen('Preference', 'SkipSyncTests', 0);
 
 % Set volume to a standrad level
 % system('osascript -e "set Volume 4.2"');
@@ -113,6 +107,7 @@ system('amixer -c 0 set Master 4.2DB');
 
 % Perform basic initialization of the sound driver:
 InitializePsychSound;
+
 
 % Open the default audio device [], with default mode [] (==Only playback),
 % and a required latencyclass of zero 0 == no low-latency mode, as well as
@@ -128,7 +123,7 @@ catch %#ok<*CTCH>
 
     psychlasterror('reset');
     pahandle = PsychPortAudio('Open', [], [], 0, [], 2);
-end 
+end
 
 %  Data structure in which exptl data will be stored:
 pwm_history = struct('modality', {}, 'a1_time', {}, 'a2_time', {}, 'fcut', {}, ...
@@ -136,7 +131,7 @@ pwm_history = struct('modality', {}, 'a1_time', {}, 'a2_time', {}, 'fcut', {}, .
    'a1_sigma',{},'a2_sigma',{},'delaydur',{},...
    'prestim',{},'poststim',{},...
    'lfreq', {}, 'hfreq',{}, 'rt', {}, 'hit', {}, ...
-   'wentR', {}, 'selside', {}, 'siderule', {}, 'trialnum', {}, ...
+   'wentR', {}, 'selside', {}, 'siderule', {}, 'trialnum', {}, ... % selside stands for selected size
    'valid', {}, 'T', {}, 'trialtime', {}, 'prepause', {});
 
 prestims_real = [];
@@ -172,7 +167,7 @@ insMiss = 'sorry... :(';
 insTimeout = 'TimeOut'; 
 insViolation = 'Premature responses are invalid';
 
-insByeBye = 'All done! Will quit in 1 sec.';
+insByeBye = 'All done! Press any key to quit.';
 
 %% main task
 ListenChar(2); % disable keyboard input to matlab; if there's an error and you don't have the keyboard, press Ctrl-c
@@ -185,7 +180,7 @@ try
     % Get the screen up, collect all the info we need about it
     HideCursor;
     [w, wRect]=Screen('OpenWindow',0,0);
-    Screen('TextSize', w, 15);
+    Screen('TextSize', w, 25);
     wWidth = wRect(3); wHeight = wRect(4);
     ifi = Screen('GetFlipInterval', w);
     white = WhiteIndex(w);
@@ -204,7 +199,7 @@ try
     target_RightShape = makeShape('square', c_target_rad, c_target_location, wWidth, wHeight);
 
     
-    DrawFormattedText(w, ['Please adjust your chair so that your chin rests comfortably in the chin rest. \n ' insPress], ...
+    DrawFormattedText(w, ['Please adjust your chair so that you are comfortable. \n ' insPress], ...
                      'center', 'center', white);
     Screen('Flip', w);
     KbWait();
@@ -518,8 +513,7 @@ try
             otherwise
                 
                 fprintf(2, 'PWMHuman.m: dont know about modality %s, quitting\n', modality);
-                break;
-                
+                break;                
         end
         
         % stimulus presentation is done, take the fixation cross away
@@ -586,12 +580,14 @@ try
         end
         
         Screen('Close');
+
+        %sca;
         
         % save data after every trial
         n_done_trials = n_done_trials + 1;
-        save([name filesep session_fname], 'pwm_history', 'sessiondate', 'source_code');
-
+        save([data_dir session_fname], 'pwm_history', 'sessiondate', 'source_code');
         
+
         % feedback to the subject
         if pwm_history(trialnum).hit == 1
             report = 'correct';
@@ -660,20 +656,17 @@ try
             
         trialnum = trialnum + 1;
 
+    prestims_real
+    delaydurs_real
+    poststims_real
+    a1_times_real
+    a2_times_real    
+
 %         WaitSecs(2);
 %         sca;
 
     end % end of trials loop
 
-    prestims_real
-    a1_times_real
-    delaydurs_real
-    a2_times_real
-    poststims_real
-
-
-    
-        
     % add ending time to session
     sessiondate(2,:) = datetime("now");%, 31);
     
@@ -771,7 +764,7 @@ try
     
     % save data
     pwm_history = pwm_history(1:n_done_trials);
-    save([name filesep session_fname], 'pwm_history', 'sessiondate', 'source_code', 'screen_specs', 'email_status', 'msg', 'net_pay');
+    save([data_dir session_fname], 'pwm_history', 'sessiondate', 'source_code', 'screen_specs', 'email_status', 'msg', 'net_pay');
 
     % Tidying up at the end
     PsychPortAudio('Close', pahandle); % Close the audio device:
@@ -781,24 +774,24 @@ try
     ShowCursor;
     
     % ---- send data file to svn ---
-    if commit_to_svn
-        [status, res] = system(sprintf('svn add %s', [name filesep session_fname '.mat'])); 
-        if status
-            fprintf(2, 'Error %s while adding data file to svn!  Please let Bing know.\n', res);
-        end
-        
-        [status, res] = system(sprintf('svn commit -m "" %s', [name filesep session_fname '.mat']));
-        if status
-            fprintf(2, 'Error %s while commiting data file to svn!  Please let Bing know.\n', res);
-        end
-        
-        [status, res] = system(sprintf('svn commit -m "" %s', [name filesep name '_startup.m']));
-        if status
-            fprintf(2, 'Error %s while commiting startup file to svn!  Please let Bing know.\n', res);
-        end
-    else
-        fprintf(1, '\n\n Data file has not been committed to svn\n\n\n');
-    end  
+%     if commit_to_svn
+%         [status, res] = system(sprintf('svn add %s', [data_dir session_fname '.mat'])); 
+%         if status
+%             fprintf(2, 'Error %s while adding data file to svn!  Please let Bing know.\n', res);
+%         end
+%         
+%         [status, res] = system(sprintf('svn commit -m "" %s', [data_dir session_fname '.mat']));
+%         if status
+%             fprintf(2, 'Error %s while commiting data file to svn!  Please let Bing know.\n', res);
+%         end
+%         
+%         [status, res] = system(sprintf('svn commit -m "" %s', [data_dir name '_startup.m']));
+%         if status
+%             fprintf(2, 'Error %s while commiting startup file to svn!  Please let Bing know.\n', res);
+%         end
+%     else
+%         fprintf(1, '\n\n Data file has not been committed to svn\n\n\n');
+%     end  
     % ----------
     
     % At the end of your code, it is a good idea to restore the old level.
@@ -806,7 +799,7 @@ try
 
 catch   % If there's an error, save the data, quit and tell us about it
     ListenChar(0); % re-enable keyboard input to matlab    
-    save([name filesep session_fname], 'pwm_history', 'sessiondate', 'source_code');
+    save([data_dir session_fname], 'pwm_history', 'sessiondate', 'source_code');
     PsychPortAudio('Close', pahandle); % Close the  audio device:
     Screen('CloseAll');
     Priority(0);

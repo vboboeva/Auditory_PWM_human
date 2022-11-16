@@ -6,7 +6,7 @@ function [normbase]=singlenoise(sigma_1,T,fcut,Fs,filter_type)
 %'BUTTER': IIR Butterworth lowpass filter%%%%%%'GAUS': Gaussian filter (window)
 %'MOVAVRG': Moving average FIR filter%%%%%%%%'KAISER': Kaiser-window FIR filtering
 % 'EQUIRIP':Eqiripple FIR filter%%%%% 'HAMMING': Hamming-window based FIR 
-% T is duration of each signal in milisecond, fcut is the cut-off frequency                                     
+% T is duration of each signal in millisecond, fcut is the cut-off frequency                                     
 % Fs is the sampling frequency
 % outband=40;
 sigma_1=1;
