@@ -1,14 +1,23 @@
-name = 'Athena';
+clear all
+name = 'Test';
 Default_startup_pwm;
-subject_contact = 'v.boboeva@ucl.ac.uk';
 
 command_to_run = 'PWMHuman';
-min_paid_session_length = 10;
+min_paid_session_length = 300;
 show_fixation_in_prepause = 0;
 
 modality = 'auditory';
-fname_string = 'auditory_new_data';
-a_volume = 0.4;
-mainpth='/Users/vboboeva/Documents/Auditory_PWM_human/';
-data_dir = '/Users/vboboeva/Documents/Auditory_PWM_human/'; % ALL EXPERIMENTS subject folders will be saved here!
+filter_type ='GAUS';
+fcut = 110;
+lfreq = 2000;
+hfreq = 6000;
+
+% pick a type of distribution (uniform is Athena's original code)
+% distr_type = 'Uniform'
+% distr_type = 'Bimodal';
+distr_type = 'NegSkewed';
+% distr_type = 'PosSkewed'
+
 PWMHuman_gen_trial_mtx;
+
+fname_string = ['Sub_' name '_' distr_type]

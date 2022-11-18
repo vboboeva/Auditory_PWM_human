@@ -3,16 +3,15 @@
 % for each subject Myname, make another file Myname/Myname_startup.m that calls this
 % file, then make any appropriate changes (such as subject contact,
 % modality, etc.)
-
+clc
 subject_contact = '';
 command_to_run = 'PWMHuman';
 modality = 'auditory'; % 'auditory' or 'visual' or 'colors' or 'orientation'
-fname_string = 'testing';
 
 commit_to_svn = 0;
 send_automated_email = 0; % email session summary to experimenters and subject
 send_session_analysis = 0; % email analysis of session to experimenters
-experimenter_contacts = {'aakrami@princeton.edu'};
+experimenter_contacts = {'v.boboeva@ucl.ac.uk'};
 
 feedback_interval = 10; % feedback of mean accuracy every this many trials
 display_session_summary = 0;

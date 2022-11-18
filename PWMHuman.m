@@ -83,27 +83,28 @@ catch
 end
 
 % Make sure the directory exists
-if ~exist([distr_type '/' name], 'dir')
-   mkdir([distr_type '/' name]);
+if ~exist('data', 'dir')
+   mkdir('data');
 end
 
 % --- find a session filename in the format name_fname_string_ddd where ddd is a session number
-data_dir = ['/home/vizhe/Documents/Auditory_PWM_human/' distr_type '/' name '/'];
+data_dir = 'data';
 
-u = dir([data_dir name '_' fname_string '*.mat']);
+u = dir([data_dir '/' fname_string '*.mat']);
 session_number = numel(u)+1;
 
 session_string = num2str(session_number);
 session_string = ['0'*ones(1, 3-numel(session_string)) session_string];
-session_fname  = [name '_' fname_string '_' session_string];
+session_fname  = [fname_string '_' session_string];
 
+%return
 
 %% this needs to be resolved.
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Set volume to a standrad level
 % system('osascript -e "set Volume 4.2"');
-system('amixer -c 0 set Master 4.2DB');
+system('amixer -c 0 sset Master 50%');
 
 % Perform basic initialization of the sound driver:
 InitializePsychSound;
@@ -131,7 +132,7 @@ pwm_history = struct('modality', {}, 'a1_time', {}, 'a2_time', {}, 'fcut', {}, .
    'a1_sigma',{},'a2_sigma',{},'delaydur',{},...
    'prestim',{},'poststim',{},...
    'lfreq', {}, 'hfreq',{}, 'rt', {}, 'hit', {}, ...
-   'wentR', {}, 'selside', {}, 'siderule', {}, 'trialnum', {}, ... % selside stands for selected size
+   'wentR', {}, 'selside', {}, 'siderule', {}, 'trialnum', {}, ... % selside stands for selected side
    'valid', {}, 'T', {}, 'trialtime', {}, 'prepause', {});
 
 prestims_real = [];
@@ -163,7 +164,7 @@ insReady = 'Ready? Press space bar to go \n (Press q to quit)';
 insPress = '... Press any key to continue ...';
 
 insHit = 'Yes!';
-insMiss = 'sorry... :(';
+insMiss = 'Sorry... :(';
 insTimeout = 'TimeOut'; 
 insViolation = 'Premature responses are invalid';
 
@@ -199,13 +200,15 @@ try
     target_RightShape = makeShape('square', c_target_rad, c_target_location, wWidth, wHeight);
 
     
-    DrawFormattedText(w, ['Please adjust your chair so that you are comfortable. \n ' insPress], ...
-                     'center', 'center', white);
+%     DrawFormattedText(w, ['Please adjust your chair so that you are comfortable. \n ' insPress], 'center', 'center', white);
+%     Screen('Flip', w);
+%     KbWait();
+
+    DrawFormattedText(w, ['The task is to report whether the first sound is louder or the second. \n ' insPress], 'center', 'center', white);
     Screen('Flip', w);
     KbWait();
     
-    DrawFormattedText(w, ['"s" is the Left response, "l" is the Right response \n ' insPress], ...
-                     'center', 'center', white);
+    DrawFormattedText(w, ['Press "S" if you decide that it is the first, "L" if it is the second \n ' insPress], 'center', 'center', white);
     Screen('Flip', w);
     WaitSecs(0.2);
     KbWait();
@@ -222,6 +225,7 @@ try
     fixed_fixation_durs = [];
     myTs = [];
 
+    %% this loop goes over the trials
     while(trialnum < numel(prestims))
         % which modality are we in for this trial?
         switch modality
@@ -583,9 +587,9 @@ try
 
         %sca;
         
-        % save data after every trial
+        % data after every trial
         n_done_trials = n_done_trials + 1;
-        save([data_dir session_fname], 'pwm_history', 'sessiondate', 'source_code');
+        save([data_dir '/' session_fname], 'pwm_history', 'sessiondate', 'source_code');
         
 
         % feedback to the subject
@@ -610,7 +614,7 @@ try
         x = cell(numel(pwm_history),1);
         [x{:}] = deal(pwm_history.hit); x = cell2mat(x);
         if sum(~isnan(x))>0
-            avg_hitfrac = mean(x);
+            avg_hitfrac = mean(x,'omitnan');
             eweights = exp(-(trialnum - (1:trialnum)')/perf_tau);
             eweights(isnan(x)) = 0;
             eweights = eweights/sum(eweights);
@@ -764,7 +768,7 @@ try
     
     % save data
     pwm_history = pwm_history(1:n_done_trials);
-    save([data_dir session_fname], 'pwm_history', 'sessiondate', 'source_code', 'screen_specs', 'email_status', 'msg', 'net_pay');
+    save([data_dir '/' session_fname], 'pwm_history', 'sessiondate', 'source_code', 'screen_specs', 'email_status', 'msg', 'net_pay');
 
     % Tidying up at the end
     PsychPortAudio('Close', pahandle); % Close the audio device:
@@ -775,17 +779,17 @@ try
     
     % ---- send data file to svn ---
 %     if commit_to_svn
-%         [status, res] = system(sprintf('svn add %s', [data_dir session_fname '.mat'])); 
+%         [status, res] = system(sprintf('svn add %s', [data_dir '/' session_fname '.mat'])); 
 %         if status
 %             fprintf(2, 'Error %s while adding data file to svn!  Please let Bing know.\n', res);
 %         end
 %         
-%         [status, res] = system(sprintf('svn commit -m "" %s', [data_dir session_fname '.mat']));
+%         [status, res] = system(sprintf('svn commit -m "" %s', [data_dir '/' session_fname '.mat']));
 %         if status
 %             fprintf(2, 'Error %s while commiting data file to svn!  Please let Bing know.\n', res);
 %         end
 %         
-%         [status, res] = system(sprintf('svn commit -m "" %s', [data_dir name '_startup.m']));
+%         [status, res] = system(sprintf('svn commit -m "" %s', [data_dir '/' name '_startup.m']));
 %         if status
 %             fprintf(2, 'Error %s while commiting startup file to svn!  Please let Bing know.\n', res);
 %         end
@@ -799,7 +803,7 @@ try
 
 catch   % If there's an error, save the data, quit and tell us about it
     ListenChar(0); % re-enable keyboard input to matlab    
-    save([data_dir session_fname], 'pwm_history', 'sessiondate', 'source_code');
+    save([data_dir '/' session_fname], 'pwm_history', 'sessiondate', 'source_code');
     PsychPortAudio('Close', pahandle); % Close the  audio device:
     Screen('CloseAll');
     Priority(0);

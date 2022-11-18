@@ -5,7 +5,7 @@
 %clear all; close all; clc;
 %
 
-data_dir = '/home/vizhe/Documents/Auditory_PWM_human/'; %ALL EXPERIMENTS subject folders will be saved here!
+data_dir = '/home/vizhe/Documents/Auditory_PWM_human/data/'; %ALL EXPERIMENTS subject folders will be saved here!
 % expNum_folderName = name; %the subfolder you wish to create! All the subject folders and trial paramter files will be stored in this folder. 
 
 sdi = .15;  % the formula for sdi =(sd1 - sd2)/(sd1 + sd2)
@@ -14,7 +14,7 @@ ratio1 =2.5;
 alfa = (ratio1-1)/(1+ratio1);
 R = 10*log10(ratio);
 R1 = 10*log10(ratio1);
-sd1 = 0.1; %define the highest value stimulus in the stimulus set
+sd1 = 1; %define the highest value stimulus in the stimulus set
 stim_levels = 6; % the number of base&comparison stimuli levels; if diamond=0, comparison stimuli levels will be base_stim_count+2;
 %Number of points in SGM = stim_levels*2 - 2;
 
@@ -23,7 +23,7 @@ diamond = 1; %1=yes, 0=no: specify if you want a diamond shaped SGM or 'vertical
 %Number of trials: 
 %Trials per session = (stim_levs*2)-2 X repsPerSes;
 %Sessions in experiment = modality count X session count;
-num_trials = 100;
+num_trials = 400;
 repsPerSes = num_trials / (stim_levels - 1) / 2; %in every session each SGM data point(stim pair) is presented this many times
 modalities = 1; %the modalities vector; 1:A-A; 2:T-T; 3:TA-TA; 4:A-T; 5:T-A;
 session_count = 5; %sessions per modality; session modality picked randomly from modalities vector without replacement; when all chosen, restart with a full set;
@@ -78,17 +78,17 @@ num_pair_pairs = num_stim_pairs/2;
 switch distr_type
 case 'Uniform'
     reweight = ones(num_pair_pairs);
-case 'Neg_skewed'
+case 'NegSkewed'
     p_ratio = 5.;
     lambda = log(p_ratio)/(num_pair_pairs - 1);
     reweight = exp(-lambda*[1:num_pair_pairs]);
     reweight = flip(reweight);
-case 'Pos_skewed'
+case 'PosSkewed'
     p_ratio = 5.;
     lambda = log(p_ratio)/(num_pair_pairs - 1);
     reweight = exp(-lambda*[1:num_pair_pairs]);
 case 'Bimodal'
-    lambda = 1;
+    lambda = 2; % increase this for "sharper" bimodality
     reweight = exp(-lambda*[1:num_pair_pairs]);
     reweight = reweight + flip(reweight);
 otherwise
@@ -179,15 +179,14 @@ trl_mtx.trialdur = (pre_delay+stim1_dur + stim2_dur + replic_post_delay(randDela
 trl_mtx.sessiondur = (3000 + sum(pre_delay+stim1_dur + stim2_dur + replic_post_delay(randDelayIndx) +replic_inter_delay(randDelayIndx)))./60000;
 
 %Prepare to save
-folderPath = [data_dir '/' distr_type '/' name '/'];
-if ~exist (folderPath,'dir')
-    mkdir(folderPath);
+if ~exist (data_dir,'dir')
+    mkdir(data_dir);
 else
 %     clear all;
 %     disp('Folder already exists! Nothing was generated!')
 %     return
 end
-save([folderPath,'trl_mtx.mat'],'trl_mtx');
+save([data_dir,'trl_mtx.mat'],'trl_mtx');
 
 %save('data.mat')
 
